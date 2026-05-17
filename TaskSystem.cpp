@@ -14,6 +14,31 @@ enum class Priority {
     High
 };
 
+std::string statusToString(Status status) {
+    switch (status) {
+        case Status::Todo:
+            return "Todo";
+        case Status::InProgress:
+            return "In Progress";
+        case Status::Done:
+            return "Done";
+    }
+
+    return "Unknown";
+}
+
+std::string priorityToString(Priority priority) {
+    switch (priority) {
+        case Priority::Low:
+            return "Low";
+        case Priority::Medium:
+            return "Medium";
+        case Priority::High:
+            return "High";
+    }
+
+    return "Unknown";
+}
 
 class WorkItem {
 protected:
