@@ -14,31 +14,6 @@ enum class Priority {
     High
 };
 
-std::string statusToString(Status status) {
-    switch (status) {
-        case Status::Todo:
-            return "Todo";
-        case Status::InProgress:
-            return "In Progress";
-        case Status::Done:
-            return "Done";
-    }
-
-    return "Unknown";
-}
-
-std::string priorityToString(Priority priority) {
-    switch (priority) {
-        case Priority::Low:
-            return "Low";
-        case Priority::Medium:
-            return "Medium";
-        case Priority::High:
-            return "High";
-    }
-
-    return "Unknown";
-}
 
 class WorkItem {
 protected:
@@ -249,28 +224,3 @@ public:
         }
     }
 };
-
-void runDemo() {
-    TaskManager manager;
-
-    manager.addProject("Website Redesign", "2025-06-01");
-    manager.addProject("Mobile App", "2025-08-15");
-
-    manager.addTask(1, "Design mockups", "2025-05-01", "Figma wireframes",
-                    Priority::High, Status::InProgress);
-
-    manager.addTask(1, "Write CSS", "2025-05-15", "Style all components",
-                    Priority::Medium, Status::Todo);
-
-    manager.addTask(2, "Setup repo", "2025-06-01", "Init React Native project",
-                    Priority::High, Status::Done);
-
-    std::cout << "--- All projects ---\n";
-    manager.displayAll();
-
-    std::cout << "\n--- Todo tasks ---\n";
-    manager.filterByStatus(Status::Todo);
-
-    std::cout << "\n--- High priority tasks ---\n";
-    manager.filterByPriority(Priority::High);
-}
