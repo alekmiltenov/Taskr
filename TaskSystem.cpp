@@ -1,18 +1,11 @@
-#include <iostream>
-#include <string>
-#include <vector>
+#include "TaskSystem.h"
 
-enum class Status {
-    Todo,
-    InProgress,
-    Done
-};
+#include <algorithm>
+#include <cctype>
+#include <fstream>
+#include <sstream>
 
-enum class Priority {
-    Low,
-    Medium,
-    High
-};
+// ---------- Helper functions ----------
 
 std::string statusToString(Status status) {
     switch (status) {
@@ -40,241 +33,545 @@ std::string priorityToString(Priority priority) {
     return "Unknown";
 }
 
-class WorkItem {
-protected:
-    int id;
-    std::string title;
-    std::string deadline;
+bool intToStatus(int choice, Status& status) {
+    switch (choice) {
+        case 1:
+            status = Status::Todo;
+            return true;
+        case 2:
+            status = Status::InProgress;
+            return true;
+        case 3:
+            status = Status::Done;
+            return true;
+        default:
+            return false;
+    }
+}
 
-public:
-    WorkItem(int id, const std::string& title, const std::string& deadline)
-        : id(id), title(title), deadline(deadline) {}
+bool intToPriority(int choice, Priority& priority) {
+    switch (choice) {
+        case 1:
+            priority = Priority::Low;
+            return true;
+        case 2:
+            priority = Priority::Medium;
+            return true;
+        case 3:
+            priority = Priority::High;
+            return true;
+        default:
+            return false;
+    }
+}
 
-    virtual ~WorkItem() = default;
-
-    int getId() const {
-        return id;
+static int priorityValue(Priority priority) {
+    switch (priority) {
+        case Priority::Low:
+            return 1;
+        case Priority::Medium:
+            return 2;
+        case Priority::High:
+            return 3;
     }
 
-    const std::string& getTitle() const {
-        return title;
+    return 0;
+}
+
+static int statusValue(Status status) {
+    switch (status) {
+        case Status::Todo:
+            return 1;
+        case Status::InProgress:
+            return 2;
+        case Status::Done:
+            return 3;
     }
 
-    const std::string& getDeadline() const {
-        return deadline;
+    return 0;
+}
+
+static std::string toLower(std::string text) {
+    for (char& ch : text) {
+        ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
     }
 
-    virtual void print(std::ostream& os) const = 0;
-};
+    return text;
+}
+
+static std::vector<std::string> splitLine(const std::string& line, char delimiter) {
+    std::vector<std::string> parts;
+    std::stringstream ss(line);
+    std::string part;
+
+    while (std::getline(ss, part, delimiter)) {
+        parts.push_back(part);
+    }
+
+    return parts;
+}
+
+// ---------- WorkItem ----------
+
+WorkItem::WorkItem(int id, const std::string& title, const std::string& deadline)
+    : id(id), title(title), deadline(deadline) {}
+
+int WorkItem::getId() const {
+    return id;
+}
+
+const std::string& WorkItem::getTitle() const {
+    return title;
+}
+
+const std::string& WorkItem::getDeadline() const {
+    return deadline;
+}
+
+void WorkItem::setTitle(const std::string& newTitle) {
+    title = newTitle;
+}
+
+void WorkItem::setDeadline(const std::string& newDeadline) {
+    deadline = newDeadline;
+}
 
 std::ostream& operator<<(std::ostream& os, const WorkItem& item) {
     item.print(os);
     return os;
 }
 
-class Task : public WorkItem {
-private:
-    std::string description;
-    Priority priority;
-    Status status;
+// ---------- Task ----------
 
-public:
-    Task(int id, const std::string& title, const std::string& deadline,
-         const std::string& description, Priority priority, Status status)
-        : WorkItem(id, title, deadline),
-          description(description),
-          priority(priority),
-          status(status) {}
+Task::Task(int id, const std::string& title, const std::string& deadline,
+           const std::string& description, Priority priority, Status status)
+    : WorkItem(id, title, deadline),
+      description(description),
+      priority(priority),
+      status(status) {}
 
-    Status getStatus() const {
-        return status;
+const std::string& Task::getDescription() const {
+    return description;
+}
+
+Priority Task::getPriority() const {
+    return priority;
+}
+
+Status Task::getStatus() const {
+    return status;
+}
+
+void Task::setDescription(const std::string& newDescription) {
+    description = newDescription;
+}
+
+void Task::setPriority(Priority newPriority) {
+    priority = newPriority;
+}
+
+void Task::setStatus(Status newStatus) {
+    status = newStatus;
+}
+
+void Task::print(std::ostream& os) const {
+    os << "  [Task #" << id << "] " << title
+       << " | deadline: " << deadline
+       << " | " << description
+       << " | priority: " << priorityToString(priority)
+       << " | status: " << statusToString(status);
+}
+
+// ---------- Project ----------
+
+Project::Project(int id, const std::string& title, const std::string& deadline)
+    : WorkItem(id, title, deadline) {}
+
+void Project::addTask(const Task& task) {
+    tasks.push_back(task);
+}
+
+Task* Project::findTaskById(int taskId) {
+    for (Task& task : tasks) {
+        if (task.getId() == taskId) {
+            return &task;
+        }
     }
 
-    Priority getPriority() const {
-        return priority;
+    return nullptr;
+}
+
+const Task* Project::findTaskById(int taskId) const {
+    for (const Task& task : tasks) {
+        if (task.getId() == taskId) {
+            return &task;
+        }
     }
 
-    void setStatus(Status newStatus) {
-        status = newStatus;
+    return nullptr;
+}
+
+bool Project::deleteTask(int taskId) {
+    for (auto it = tasks.begin(); it != tasks.end(); ++it) {
+        if (it->getId() == taskId) {
+            tasks.erase(it);
+            return true;
+        }
     }
 
-    void print(std::ostream& os) const override {
-        os << "  [Task #" << id << "] " << title
-           << " | deadline: " << deadline
-           << " | " << description
-           << " | priority: " << priorityToString(priority)
-           << " | status: " << statusToString(status);
-    }
-};
+    return false;
+}
 
+std::vector<const Task*> Project::filterByStatus(Status status) const {
+    std::vector<const Task*> result;
 
-
-class Project : public WorkItem {
-private:
-    std::vector<Task> tasks;
-
-public:
-    Project(int id, const std::string& title, const std::string& deadline)
-        : WorkItem(id, title, deadline) {}
-
-    void addTask(const Task& task) {
-        tasks.push_back(task);
+    for (const Task& task : tasks) {
+        if (task.getStatus() == status) {
+            result.push_back(&task);
+        }
     }
 
-    std::vector<const Task*> filterByStatus(Status status) const {
-        std::vector<const Task*> result;
+    return result;
+}
 
-        for (const Task& task : tasks) {
-            if (task.getStatus() == status) {
-                result.push_back(&task);
+std::vector<const Task*> Project::filterByPriority(Priority priority) const {
+    std::vector<const Task*> result;
+
+    for (const Task& task : tasks) {
+        if (task.getPriority() == priority) {
+            result.push_back(&task);
+        }
+    }
+
+    return result;
+}
+
+void Project::sortTasks(SortType sortType) {
+    switch (sortType) {
+        case SortType::Title:
+            std::sort(tasks.begin(), tasks.end(), [](const Task& a, const Task& b) {
+                return a.getTitle() < b.getTitle();
+            });
+            break;
+
+        case SortType::Deadline:
+            std::sort(tasks.begin(), tasks.end(), [](const Task& a, const Task& b) {
+                return a.getDeadline() < b.getDeadline();
+            });
+            break;
+
+        case SortType::Priority:
+            std::sort(tasks.begin(), tasks.end(), [](const Task& a, const Task& b) {
+                return priorityValue(a.getPriority()) > priorityValue(b.getPriority());
+            });
+            break;
+
+        case SortType::Status:
+            std::sort(tasks.begin(), tasks.end(), [](const Task& a, const Task& b) {
+                return statusValue(a.getStatus()) < statusValue(b.getStatus());
+            });
+            break;
+    }
+}
+
+const std::vector<Task>& Project::getTasks() const {
+    return tasks;
+}
+
+void Project::print(std::ostream& os) const {
+    os << "[Project #" << id << "] " << title
+       << " | deadline: " << deadline << "\n";
+
+    if (tasks.empty()) {
+        os << "  (no tasks)\n";
+        return;
+    }
+
+    for (const Task& task : tasks) {
+        os << task << "\n";
+    }
+}
+
+// ---------- TaskManager ----------
+
+TaskManager::TaskManager()
+    : nextProjectId(1), nextTaskId(1) {}
+
+Project* TaskManager::findProjectById(int projectId) {
+    for (Project& project : projects) {
+        if (project.getId() == projectId) {
+            return &project;
+        }
+    }
+
+    return nullptr;
+}
+
+const Project* TaskManager::findProjectById(int projectId) const {
+    for (const Project& project : projects) {
+        if (project.getId() == projectId) {
+            return &project;
+        }
+    }
+
+    return nullptr;
+}
+
+int TaskManager::addProject(const std::string& title, const std::string& deadline) {
+    int id = nextProjectId;
+    projects.emplace_back(id, title, deadline);
+    nextProjectId++;
+    return id;
+}
+
+bool TaskManager::updateProject(int projectId, const std::string& newTitle, const std::string& newDeadline) {
+    Project* project = findProjectById(projectId);
+
+    if (project == nullptr) {
+        return false;
+    }
+
+    project->setTitle(newTitle);
+    project->setDeadline(newDeadline);
+    return true;
+}
+
+bool TaskManager::deleteProject(int projectId) {
+    for (auto it = projects.begin(); it != projects.end(); ++it) {
+        if (it->getId() == projectId) {
+            projects.erase(it);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool TaskManager::addTask(int projectId, const std::string& title,
+                          const std::string& deadline, const std::string& description,
+                          Priority priority, Status status) {
+    Project* project = findProjectById(projectId);
+
+    if (project == nullptr) {
+        return false;
+    }
+
+    Task task(nextTaskId, title, deadline, description, priority, status);
+    project->addTask(task);
+    nextTaskId++;
+
+    return true;
+}
+
+bool TaskManager::updateTask(int taskId, const std::string& newTitle, const std::string& newDeadline,
+                             const std::string& newDescription, Priority newPriority, Status newStatus) {
+    for (Project& project : projects) {
+        Task* task = project.findTaskById(taskId);
+
+        if (task != nullptr) {
+            task->setTitle(newTitle);
+            task->setDeadline(newDeadline);
+            task->setDescription(newDescription);
+            task->setPriority(newPriority);
+            task->setStatus(newStatus);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool TaskManager::deleteTask(int taskId) {
+    for (Project& project : projects) {
+        if (project.deleteTask(taskId)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void TaskManager::displayAll() const {
+    if (projects.empty()) {
+        std::cout << "No projects yet.\n";
+        return;
+    }
+
+    for (const Project& project : projects) {
+        std::cout << project << "\n";
+    }
+}
+
+void TaskManager::filterByStatus(Status status) const {
+    bool foundAny = false;
+
+    for (const Project& project : projects) {
+        std::vector<const Task*> results = project.filterByStatus(status);
+
+        if (!results.empty()) {
+            foundAny = true;
+            std::cout << "Project: " << project.getTitle() << "\n";
+
+            for (const Task* task : results) {
+                std::cout << *task << "\n";
             }
         }
-
-        return result;
     }
 
-    std::vector<const Task*> filterByPriority(Priority priority) const {
-        std::vector<const Task*> result;
+    if (!foundAny) {
+        std::cout << "No tasks with status: " << statusToString(status) << "\n";
+    }
+}
 
-        for (const Task& task : tasks) {
-            if (task.getPriority() == priority) {
-                result.push_back(&task);
+void TaskManager::filterByPriority(Priority priority) const {
+    bool foundAny = false;
+
+    for (const Project& project : projects) {
+        std::vector<const Task*> results = project.filterByPriority(priority);
+
+        if (!results.empty()) {
+            foundAny = true;
+            std::cout << "Project: " << project.getTitle() << "\n";
+
+            for (const Task* task : results) {
+                std::cout << *task << "\n";
             }
         }
-
-        return result;
     }
 
-    void print(std::ostream& os) const override {
-        os << "[Project #" << id << "] " << title
-           << " | deadline: " << deadline << "\n";
-
-        if (tasks.empty()) {
-            os << "  (no tasks)\n";
-            return;
-        }
-
-        for (const Task& task : tasks) {
-            os << task << "\n";
-        }
+    if (!foundAny) {
+        std::cout << "No tasks with priority: " << priorityToString(priority) << "\n";
     }
-};
+}
 
-
-
-class TaskManager {
-private:
-    std::vector<Project> projects;
-    int nextProjectId = 1;
-    int nextTaskId = 1;
-
-    Project* findProjectById(int projectId) {
-        for (Project& project : projects) {
-            if (project.getId() == projectId) {
-                return &project;
-            }
-        }
-
-        return nullptr;
+void TaskManager::sortTasks(SortType sortType) {
+    for (Project& project : projects) {
+        project.sortTasks(sortType);
     }
+}
 
-public:
-    void addProject(const std::string& title, const std::string& deadline) {
-        projects.emplace_back(nextProjectId, title, deadline);
-        nextProjectId++;
-    }
+void TaskManager::search(const std::string& keyword) const {
+    std::string loweredKeyword = toLower(keyword);
+    bool foundAny = false;
 
-    bool addTask(int projectId, const std::string& title,
-                 const std::string& deadline, const std::string& description,
-                 Priority priority, Status status) {
-        Project* project = findProjectById(projectId);
+    for (const Project& project : projects) {
+        bool projectPrinted = false;
 
-        if (project == nullptr) {
-            return false;
-        }
+        std::string projectText = project.getTitle() + " " + project.getDeadline();
 
-        Task task(nextTaskId, title, deadline, description, priority, status);
-        project->addTask(task);
-        nextTaskId++;
-
-        return true;
-    }
-
-    void displayAll() const {
-        if (projects.empty()) {
-            std::cout << "No projects yet.\n";
-            return;
-        }
-
-        for (const Project& project : projects) {
+        if (toLower(projectText).find(loweredKeyword) != std::string::npos) {
             std::cout << project << "\n";
+            foundAny = true;
+            projectPrinted = true;
         }
-    }
 
-    void filterByStatus(Status status) const {
-        bool foundAny = false;
+        if (!projectPrinted) {
+            for (const Task& task : project.getTasks()) {
+                std::string taskText = task.getTitle() + " " + task.getDeadline() + " " + task.getDescription();
 
-        for (const Project& project : projects) {
-            std::vector<const Task*> results = project.filterByStatus(status);
+                if (toLower(taskText).find(loweredKeyword) != std::string::npos) {
+                    if (!projectPrinted) {
+                        std::cout << "Project: " << project.getTitle() << "\n";
+                        projectPrinted = true;
+                    }
 
-            if (!results.empty()) {
-                foundAny = true;
-                std::cout << "Project: " << project.getTitle() << "\n";
-
-                for (const Task* task : results) {
-                    std::cout << *task << "\n";
+                    std::cout << task << "\n";
+                    foundAny = true;
                 }
             }
         }
+    }
 
-        if (!foundAny) {
-            std::cout << "No tasks with status: " << statusToString(status) << "\n";
+    if (!foundAny) {
+        std::cout << "No results found for: " << keyword << "\n";
+    }
+}
+
+bool TaskManager::saveToFile(const std::string& filename) const {
+    std::ofstream file(filename);
+
+    if (!file.is_open()) {
+        return false;
+    }
+
+    file << "NEXT|" << nextProjectId << "|" << nextTaskId << "\n";
+
+    for (const Project& project : projects) {
+        file << "PROJECT|"
+             << project.getId() << "|"
+             << project.getTitle() << "|"
+             << project.getDeadline() << "\n";
+
+        for (const Task& task : project.getTasks()) {
+            file << "TASK|"
+                 << project.getId() << "|"
+                 << task.getId() << "|"
+                 << task.getTitle() << "|"
+                 << task.getDeadline() << "|"
+                 << task.getDescription() << "|"
+                 << priorityValue(task.getPriority()) << "|"
+                 << statusValue(task.getStatus()) << "\n";
         }
     }
 
-    void filterByPriority(Priority priority) const {
-        bool foundAny = false;
+    return true;
+}
 
-        for (const Project& project : projects) {
-            std::vector<const Task*> results = project.filterByPriority(priority);
+bool TaskManager::loadFromFile(const std::string& filename) {
+    std::ifstream file(filename);
 
-            if (!results.empty()) {
-                foundAny = true;
-                std::cout << "Project: " << project.getTitle() << "\n";
+    if (!file.is_open()) {
+        return false;
+    }
 
-                for (const Task* task : results) {
-                    std::cout << *task << "\n";
+    std::vector<Project> loadedProjects;
+    int loadedNextProjectId = 1;
+    int loadedNextTaskId = 1;
+
+    std::string line;
+
+    while (std::getline(file, line)) {
+        if (line.empty()) {
+            continue;
+        }
+
+        std::vector<std::string> parts = splitLine(line, '|');
+
+        if (parts.empty()) {
+            continue;
+        }
+
+        if (parts[0] == "NEXT" && parts.size() == 3) {
+            loadedNextProjectId = std::stoi(parts[1]);
+            loadedNextTaskId = std::stoi(parts[2]);
+        } else if (parts[0] == "PROJECT" && parts.size() == 4) {
+            int projectId = std::stoi(parts[1]);
+            loadedProjects.emplace_back(projectId, parts[2], parts[3]);
+        } else if (parts[0] == "TASK" && parts.size() == 8) {
+            int projectId = std::stoi(parts[1]);
+            int taskId = std::stoi(parts[2]);
+
+            Priority priority = Priority::Low;
+            Status status = Status::Todo;
+
+            int priorityNumber = std::stoi(parts[6]);
+            int statusNumber = std::stoi(parts[7]);
+
+            intToPriority(priorityNumber, priority);
+            intToStatus(statusNumber, status);
+
+            for (Project& project : loadedProjects) {
+                if (project.getId() == projectId) {
+                    project.addTask(Task(taskId, parts[3], parts[4], parts[5], priority, status));
+                    break;
                 }
             }
         }
-
-        if (!foundAny) {
-            std::cout << "No tasks with priority: " << priorityToString(priority) << "\n";
-        }
     }
-};
 
-void runDemo() {
-    TaskManager manager;
+    projects = loadedProjects;
+    nextProjectId = loadedNextProjectId;
+    nextTaskId = loadedNextTaskId;
 
-    manager.addProject("Website Redesign", "2025-06-01");
-    manager.addProject("Mobile App", "2025-08-15");
-
-    manager.addTask(1, "Design mockups", "2025-05-01", "Figma wireframes",
-                    Priority::High, Status::InProgress);
-
-    manager.addTask(1, "Write CSS", "2025-05-15", "Style all components",
-                    Priority::Medium, Status::Todo);
-
-    manager.addTask(2, "Setup repo", "2025-06-01", "Init React Native project",
-                    Priority::High, Status::Done);
-
-    std::cout << "--- All projects ---\n";
-    manager.displayAll();
-
-    std::cout << "\n--- Todo tasks ---\n";
-    manager.filterByStatus(Status::Todo);
-
-    std::cout << "\n--- High priority tasks ---\n";
-    manager.filterByPriority(Priority::High);
+    return true;
 }
