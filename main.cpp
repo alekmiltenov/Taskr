@@ -142,3 +142,57 @@ static void projectCrudMenu(TaskManager& manager) {
         }
     }
 }
+
+static void taskCrudMenu(TaskManager& manager) {
+    while (true) {
+        std::cout << "\n--- Task management ---\n";
+        std::cout << "1. Add task\n";
+        std::cout << "2. Update task\n";
+        std::cout << "3. Delete task\n";
+        std::cout << "0. Back\n";
+
+        int choice = readInt("Choose: ");
+
+        if (choice == 0) {
+            return;
+        }
+
+        if (choice == 1) {
+            int projectId = readInt("Project ID: ");
+            std::string title = readLine("Task title: ");
+            std::string deadline = readLine("Deadline: ");
+            std::string description = readLine("Description: ");
+            Priority priority = readPriority();
+            Status status = readStatus();
+
+            if (manager.addTask(projectId, title, deadline, description, priority, status)) {
+                std::cout << "Task added.\n";
+            } else {
+                std::cout << "Project not found.\n";
+            }
+        } else if (choice == 2) {
+            int taskId = readInt("Task ID: ");
+            std::string title = readLine("New title: ");
+            std::string deadline = readLine("New deadline: ");
+            std::string description = readLine("New description: ");
+            Priority priority = readPriority();
+            Status status = readStatus();
+
+            if (manager.updateTask(taskId, title, deadline, description, priority, status)) {
+                std::cout << "Task updated.\n";
+            } else {
+                std::cout << "Task not found.\n";
+            }
+        } else if (choice == 3) {
+            int taskId = readInt("Task ID: ");
+
+            if (manager.deleteTask(taskId)) {
+                std::cout << "Task deleted.\n";
+            } else {
+                std::cout << "Task not found.\n";
+            }
+        } else {
+            std::cout << "Invalid choice.\n";
+        }
+    }
+}
