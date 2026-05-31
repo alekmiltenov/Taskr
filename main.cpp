@@ -196,3 +196,80 @@ static void taskCrudMenu(TaskManager& manager) {
         }
     }
 }
+
+int main() {
+    TaskManager manager;
+
+    // Demo data. You can remove this later if you want the program to start empty.
+    manager.addProject("Website Redesign", "2025-06-01");
+    manager.addProject("Mobile App", "2025-08-15");
+
+    manager.addTask(1, "Design mockups", "2025-05-01", "Figma wireframes",
+                    Priority::High, Status::InProgress);
+    manager.addTask(1, "Write CSS", "2025-05-15", "Style all components",
+                    Priority::Medium, Status::Todo);
+    manager.addTask(2, "Setup repo", "2025-06-01", "Init React Native project",
+                    Priority::High, Status::Done);
+
+    while (true) {
+        std::cout << "\n=== Task and Project Manager ===\n";
+        std::cout << "1. Project CRUD\n";
+        std::cout << "2. Task CRUD\n";
+        std::cout << "3. Display all\n";
+        std::cout << "4. Filter by status\n";
+        std::cout << "5. Filter by priority\n";
+        std::cout << "6. Sort tasks\n";
+        std::cout << "7. Search\n";
+        std::cout << "8. Save to file\n";
+        std::cout << "9. Load from file\n";
+        std::cout << "0. Exit\n";
+
+        int choice = readInt("Choose: ");
+
+        if (choice == 0) {
+            std::cout << "Goodbye.\n";
+            break;
+        }
+
+        if (choice == 1) {
+            projectCrudMenu(manager);
+        } else if (choice == 2) {
+            taskCrudMenu(manager);
+        } else if (choice == 3) {
+            manager.displayAll();
+        } else if (choice == 4) {
+            Status status = readStatus();
+            manager.filterByStatus(status);
+        } else if (choice == 5) {
+            Priority priority = readPriority();
+            manager.filterByPriority(priority);
+        } else if (choice == 6) {
+            SortType sortType = readSortType();
+            manager.sortTasks(sortType);
+            std::cout << "Tasks sorted.\n";
+        } else if (choice == 7) {
+            std::string keyword = readLine("Search keyword: ");
+            manager.search(keyword);
+        } else if (choice == 8) {
+            std::string filename = readLine("Filename: ");
+
+            if (manager.saveToFile(filename)) {
+                std::cout << "Saved successfully.\n";
+            } else {
+                std::cout << "Could not save file.\n";
+            }
+        } else if (choice == 9) {
+            std::string filename = readLine("Filename: ");
+
+            if (manager.loadFromFile(filename)) {
+                std::cout << "Loaded successfully.\n";
+            } else {
+                std::cout << "Could not load file.\n";
+            }
+        } else {
+            std::cout << "Invalid choice.\n";
+        }
+    }
+
+    return 0;
+}
