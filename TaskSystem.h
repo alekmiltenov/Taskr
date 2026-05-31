@@ -4,7 +4,6 @@
 #include <string>
 #include <vector>
 
-// These enums make the code safer than using random strings like "done" or "high".
 enum class Status {
     Todo,
     InProgress,
@@ -29,6 +28,7 @@ std::string priorityToString(Priority priority);
 
 bool intToStatus(int choice, Status& status);
 bool intToPriority(int choice, Priority& priority);
+
 
 // ABSTRACT BASE CLASS
 // This class represents the shared idea of a "work item".
@@ -62,6 +62,7 @@ public:
 // Because print() is virtual, it calls Task::print or Project::print automatically.
 std::ostream& operator<<(std::ostream& os, const WorkItem& item);
 
+
 // INHERITANCE:
 // Task is a specific type of WorkItem.
 class Task : public WorkItem {
@@ -86,6 +87,7 @@ public:
 
     void print(std::ostream& os) const override;
 };
+
 
 // INHERITANCE:
 // Project is also a WorkItem, but it additionally contains tasks.
@@ -116,8 +118,9 @@ public:
     void print(std::ostream& os) const override;
 };
 
+
 // TaskManager controls all projects and creates unique IDs.
-class TaskManager {
+class TaskManager{
 private:
     std::vector<Project> projects;
     int nextProjectId;
@@ -142,7 +145,7 @@ public:
                     const std::string& newDescription, Priority newPriority, Status newStatus);
     bool deleteTask(int taskId);
 
-    // Features 3-9.
+    // Rest of the features 3-9
     void displayAll() const;
     void filterByStatus(Status status) const;
     void filterByPriority(Priority priority) const;
@@ -151,4 +154,7 @@ public:
 
     bool saveToFile(const std::string& filename) const;
     bool loadFromFile(const std::string& filename);
+
 };
+
+
