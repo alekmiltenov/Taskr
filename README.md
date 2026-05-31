@@ -19,14 +19,17 @@ The program allows users to create projects, add tasks to them, track deadlines,
 
 ```txt
 main.cpp          - console menu and user input
-TaskSystem.h     - class declarations and public interfaces
-TaskSystem.cpp   - class method implementations and core logic
+TaskSystem.h     - common declarations and class interfaces
+TaskSystem.cpp   - helper functions and WorkItem implementation
+Task.cpp         - Task class implementation
+Project.cpp      - Project class implementation
+TaskManager.cpp  - TaskManager class implementation
 ```
 
 ## Compilation
 
 ```bash
-g++ -std=c++17 -Wall -Wextra -pedantic main.cpp TaskSystem.cpp -o task_manager
+g++ -std=c++17 -Wall -Wextra -pedantic main.cpp TaskSystem.cpp Task.cpp Project.cpp TaskManager.cpp -o task_manager
 ```
 
 ## Running
@@ -69,4 +72,3 @@ data.txt
 ```
 
 The save file uses `|` as a separator, so titles and descriptions should not contain the `|` character.
-::: 
